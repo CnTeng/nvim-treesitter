@@ -15,9 +15,6 @@ local non_filetype_match_injection_language_aliases = {
   ts = "typescript",
 }
 
--- compatibility shim for breaking change on nightly/0.11
-local opts = vim.fn.has "nvim-0.10" == 1 and { force = true, all = false } or true
-
 local function get_parser_from_markdown_info_string(injection_alias)
   local match = vim.filetype.match { filename = "a." .. injection_alias }
   return match or non_filetype_match_injection_language_aliases[injection_alias] or injection_alias
@@ -60,7 +57,7 @@ query.add_predicate("nth?", function(match, _pattern, _bufnr, pred)
   end
 
   return false
-end, opts)
+end, true)
 
 ---@param match (TSNode|nil)[]
 ---@param _pattern string
@@ -94,9 +91,9 @@ local function has_ancestor(match, _pattern, _bufnr, pred)
   return false
 end
 
-query.add_predicate("has-ancestor?", has_ancestor, opts)
+query.add_predicate("has-ancestor?", has_ancestor, true)
 
-query.add_predicate("has-parent?", has_ancestor, opts)
+query.add_predicate("has-parent?", has_ancestor, true)
 
 ---@param match (TSNode|nil)[]
 ---@param _pattern string
@@ -120,7 +117,7 @@ query.add_predicate("is?", function(match, _pattern, bufnr, pred)
   local _, _, kind = locals.find_definition(node, bufnr)
 
   return vim.tbl_contains(types, kind)
-end, opts)
+end, true)
 
 ---@param match (TSNode|nil)[]
 ---@param _pattern string
@@ -140,7 +137,7 @@ query.add_predicate("kind-eq?", function(match, _pattern, _bufnr, pred)
   end
 
   return vim.tbl_contains(types, node:type())
-end, opts)
+end, true)
 
 ---@param match (TSNode|nil)[]
 ---@param _ string
@@ -161,7 +158,7 @@ query.add_directive("set-lang-from-mimetype!", function(match, _, bufnr, pred, m
     local parts = vim.split(type_attr_value, "/", {})
     metadata["injection.language"] = parts[#parts]
   end
-end, opts)
+end, true)
 
 ---@param match (TSNode|nil)[]
 ---@param _ string
@@ -176,10 +173,10 @@ query.add_directive("set-lang-from-info-string!", function(match, _, bufnr, pred
   end
   local injection_alias = vim.treesitter.get_node_text(node, bufnr):lower()
   metadata["injection.language"] = get_parser_from_markdown_info_string(injection_alias)
-end, opts)
+end, true)
 
 -- Just avoid some annoying warnings for this directive
-query.add_directive("make-range!", function() end, opts)
+query.add_directive("make-range!", function() end, true)
 
 --- transform node text to lower case (e.g., to make @injection.language case insensitive)
 ---
@@ -200,7 +197,7 @@ query.add_directive("downcase!", function(match, _, bufnr, pred, metadata)
     metadata[id] = {}
   end
   metadata[id].text = string.lower(text)
-end, opts)
+end, true)
 
 -- Trim blank lines from end of the region
 -- Arguments are the captures to trim.
@@ -238,4 +235,4 @@ query.add_directive("trim!", function(match, _, bufnr, pred, metadata)
       metadata[id].range = { start_row, start_col, end_row, end_col }
     end
   end
-end, opts)
+end, true)
